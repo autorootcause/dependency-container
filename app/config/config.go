@@ -7,27 +7,45 @@ import (
 )
 
 type PluginType string
+type TriggerType string
+type ResultType string
 
 const (
-	ExternalPlugin PluginType = "external"
-	ShellCommand   PluginType = "command"
-	ShellScript    PluginType = "script"
+	PreBuilt     PluginType = "prebuilt"
+	ShellCommand PluginType = "command"
+	ShellScript  PluginType = "script"
+
+	OnLivenessFailure  TriggerType = "on_liveness_failure"
+	OnReadinessFailure TriggerType = "on_readiness_failure"
+	OnStartupFailure   TriggerType = "on_startup_failure"
+	Periodic           TriggerType = "periodic"
+
+	Http2xx        ResultType = "http_2xx"
+	SpecificString ResultType = "specific_string"
+	ContainsString ResultType = "contains_string"
 )
 
 // Config defines the format of the config we expect
 type Config struct {
-	Plugins       []Plugin `yaml:"plugins"`
-	PushReportURI string   `yaml:"push_report_uri"`        // this is where the dependency container pushes its report
-	TriggerHook   bool     `yaml:"trigger_hook,omitempty"` // only accept IAM sigv4 auth currently
-	// TriggerHook defines whether this program can accept triggers
+	Plugins            []Plugin `yaml:"plugins"`
+	PushReportEndpoint string   `yaml:"push_report_endpoint"` // this is where the dependency container pushes its report
 }
 
 type Plugin struct {
-	Name        string     `yaml:"name"`
-	Type        PluginType `yaml:"type"`
-	Image       string     `yaml:"image,omitempty"`
-	ShellScript string     `yaml:"shell_script,omitempty"`
-	ShellFile   string     `yaml:"shell_file,omitempty"`
+	Name           string     `yaml:"name"`
+	Type           PluginType `yaml:"type"`
+	DependsOn      []Plugin   `yaml:"depends_on"`
+	Image          string     `yaml:"image,omitempty"`
+	ShellScript    string     `yaml:"shell_script,omitempty"`
+	ShellFile      string     `yaml:"shell_file,omitempty"`
+	ExpectedResult ResultType `yaml:"expected_result,omitempty"`
+	Trigger        Trigger    `yaml:"trigger"`
+}
+
+type Trigger struct {
+	TriggerType     []TriggerType `yaml:"trigger_type"`
+	TriggerInterval int           `yaml:"trigger_interval,omitempty"`
+	TriggerTimeout  int           `yaml:"trigger_timeout,omitempty"`
 }
 
 func LoadConfig(filename string) (*Config, error) {

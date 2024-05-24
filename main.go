@@ -23,4 +23,7 @@ func main() {
 		logger.Fatal().Err(err).Msg("Error loading config")
 	}
 
+	for _, plugin := range cfg.Plugins {
+		plugin.Type
+	}
 }
